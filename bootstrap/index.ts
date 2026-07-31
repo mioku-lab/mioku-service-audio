@@ -16,7 +16,6 @@ import {
   REPO_DIRNAME,
   VENV_DIRNAME,
   REFERENCE_AUDIO_DIRNAME,
-  PRETRAINED_DIRNAME,
   BOOTSTRAP_READY_TIMEOUT_MS,
   RUNTIME_STARTUP_TIMEOUT_MS,
 } from "../constants";
@@ -90,28 +89,22 @@ export async function bootstrapInBackground(
   const venvDir = path.join(serviceDataDir, VENV_DIRNAME);
   const referenceAudioDir = path.join(serviceDataDir, REFERENCE_AUDIO_DIRNAME);
 
-  update("venv", "正在创建 Python 虚拟环境 ...");
+update("venv", "正在创建 Python 虚拟环境 ...");
   const venv = await createVenv(venvDir, python, settings.pipIndexUrl);
 
   update("repo", "正在拉取 GPT-SoVITS 仓库 ...");
   await ensureGitAvailable();
   await ensureRepoCloned({ repoDir, remote: settings.gitRemote });
 
-  update("models", "正在准备预训练模型...");
-  await ensureBasePretrained(repoDir);
+  update("models", "正在准备预训练模型 ...");
+  await ensureBasePretrained(repoDir, settings.hfMirror);
   await ensureModelWeights(repoDir, settings.model, settings.hfMirror);
-  const selectionDir = path.join(
-    repoDir,
-    PRETRAINED_DIRNAME.split("/").slice(0, 2).join("/"),
-    getModelSelectionName(settings.model),
-  );
-  await ensureBasePretrained(repoDir);
   if (await shouldInstallG2PW(settings.model)) {
     update("models", "正在准备 G2PW 模型 ...");
-    await ensureG2PWModel(repoDir);
+    await ensureG2PWModel(repoDir, settings.hfMirror);
   }
 
-  update("deps", "正在安装 Python 依赖 (可能耗时较长)...");
+  update("deps", "正在安装 Python 依赖 (可能耗时 5-15 分钟)...");
   await ensurePythonDeps(venv, repoDir);
 
   update("config", "正在写入 GPT-SoVITS 启动配置 ...");

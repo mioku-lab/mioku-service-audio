@@ -39,17 +39,19 @@ export async function writeTtsConfig(opts: {
   const configPath = `${opts.repoDir}/GPT_SoVITS/configs/tts_infer.yaml`;
   const selection = getModelSelection(opts.model);
   const yaml = composeTtsYaml({
-    bertBasePath: selection.bertBasePath,
-    cnhuhbertBasePath: selection.cnhuhbertBasePath,
-    t2sWeights: selection.t2sWeights,
-    vitsWeights: selection.vitsWeights,
+    bertBasePath: selection.localBertDir,
+    cnhuhbertBasePath: selection.localHubertDir,
+    t2sWeights: selection.localT2sPath,
+    vitsWeights: selection.localVitsPath,
     device: opts.device,
     isHalf: opts.isHalf,
     version: opts.model,
   });
   await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
   await fs.promises.writeFile(configPath, yaml, "utf-8");
-  audioLog.info(`tts_infer.yaml 已写入 (version=${opts.model}, device=${opts.device})`);
+  audioLog.info(
+    `tts_infer.yaml 已写入 (version=${opts.model}, device=${opts.device})`,
+  );
   return configPath;
 }
 
@@ -62,36 +64,24 @@ function composeTtsYaml(input: {
   isHalf: boolean;
   version: GptSovitsModel;
 }): string {
-  const lines: Array<[string, string | number | boolean]> = [];
-  const entries = [
-    "bert_base_path",
-    "cnhuhbert_base_path",
-    "t2s_weights_path",
-    "vits_weights_path",
-    "device",
-    "is_half",
-  ] as const;
-  const values: Record<(typeof entries)[number], string | number | boolean> = {
+  const values: Record<string, string | number | boolean> = {
     bert_base_path: input.bertBasePath,
     cnhuhbert_base_path: input.cnhuhbertBasePath,
     t2s_weights_path: input.t2sWeights,
     vits_weights_path: input.vitsWeights,
     device: input.device,
     is_half: input.isHalf,
+    version: input.version,
   };
-  for (const key of entries) {
-    const v = values[key];
-    lines.push([key, v]);
-  }
+  const renderSection = (): string =>
+    Object.entries(values)
+      .map(([k, v]) => `  ${k}: ${formatYaml(v)}`)
+      .join("\n");
   return [
     `custom:`,
-    ...Object.entries(values).map(
-      ([k, v]) => `  ${k}: ${formatYaml(v)}`,
-    ),
+    renderSection(),
     `${input.version}:`,
-    ...Object.entries(values).map(
-      ([k, v]) => `  ${k}: ${formatYaml(v)}`,
-    ),
+    renderSection(),
     "",
   ].join("\n");
 }
@@ -153,13 +143,13 @@ export async function startRuntime(opts: StartOptions): Promise<RuntimeHandle> {
     cwd: opts.repoDir,
     env,
     onStdoutLine: (line) => {
-      audioLog.info(`[gpt-sovits] ${line}`);
+      audioLog.debug(`[gpt-sovits] ${line}`);
       if (line.includes(readyKeyword) && Date.now() - startedAt >= 500) {
         resolveReady();
       }
     },
     onStderrLine: (line) => {
-      audioLog.warn(`[gpt-sovits] ${line}`);
+      routeStderr(line);
     },
     onExit: (code) => {
       if (code !== 0) {
@@ -168,6 +158,17 @@ export async function startRuntime(opts: StartOptions): Promise<RuntimeHandle> {
       }
     },
   });
+
+  function routeStderr(line: string): void {
+    const stripped = line.replace(/^\s*|\s*$/g, "");
+    if (/^(ERROR|CRITICAL|FATAL|Traceback)/i.test(stripped)) {
+      audioLog.error(`[gpt-sovits] ${line}`);
+    } else if (/^WARN/i.test(stripped)) {
+      audioLog.warn(`[gpt-sovits] ${line}`);
+    } else {
+      audioLog.info(`[gpt-sovits] ${line}`);
+    }
+  }
 
   return {
     child: handle.child,
@@ -187,14 +188,12 @@ export async function stopRuntime(handle: RuntimeHandle): Promise<void> {
   });
   try {
     handle.child.kill("SIGTERM");
-  } catch {
-  }
+  } catch {}
   const timed = new Promise<void>((resolve) =>
     setTimeout(() => {
       try {
         handle.child.kill("SIGKILL");
-      } catch {
-      }
+      } catch {}
       resolve();
     }, 5_000),
   );

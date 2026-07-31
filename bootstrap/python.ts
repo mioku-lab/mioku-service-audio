@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import * as os from "node:os";
 import { audioLog } from "../utils/log";
 
 const execFileAsync = (cmd: string, args: string[]) =>
@@ -27,6 +28,7 @@ export interface PythonInfo {
   command: string;
   version: string;
   raw: string;
+  source: string;
 }
 
 const PYTHON_CANDIDATES_BY_OS: Partial<Record<NodeJS.Platform, string[]>> = {
@@ -35,14 +37,39 @@ const PYTHON_CANDIDATES_BY_OS: Partial<Record<NodeJS.Platform, string[]>> = {
     "python3",
     "python",
     "/opt/homebrew/bin/python3",
+    "/opt/homebrew/bin/python3.10",
+    "/opt/homebrew/bin/python3.11",
+    "/opt/homebrew/bin/python3.12",
     "/usr/local/bin/python3",
+    "/usr/local/bin/python3.10",
+    "/usr/local/bin/python3.11",
+    "/usr/local/bin/python3.12",
+    "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3",
+    "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3",
+    "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+    "/opt/miniconda3/bin/python3",
+    "/opt/miniconda3/bin/python",
+    "/opt/anaconda3/bin/python3",
+    "/opt/anaconda3/bin/python",
+    `${os.homedir()}/miniconda3/bin/python3`,
+    `${os.homedir()}/miniconda3/bin/python`,
+    `${os.homedir()}/anaconda3/bin/python3`,
+    `${os.homedir()}/anaconda3/bin/python`,
     "/usr/bin/python3",
   ],
   linux: [
     "python3",
     "python",
     "/usr/bin/python3",
+    "/usr/bin/python3.10",
+    "/usr/bin/python3.11",
+    "/usr/bin/python3.12",
     "/usr/local/bin/python3",
+    "/usr/local/bin/python3.10",
+    "/usr/local/bin/python3.11",
+    "/usr/local/bin/python3.12",
+    `${os.homedir()}/miniconda3/bin/python3`,
+    `${os.homedir()}/anaconda3/bin/python3`,
   ],
 };
 
@@ -52,20 +79,11 @@ function parseMajorMinor(raw: string): number[] {
   return [Number(match[1]), Number(match[2])];
 }
 
-export function compareVersion(a: number[], b: number[]): number {
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    const av = a[i] ?? 0;
-    const bv = b[i] ?? 0;
-    if (av !== bv) return av - bv;
-  }
-  return 0;
-}
-
 export function isVersionSupported(version: number[]): boolean {
   if (version.length < 2) return false;
   const [major, minor] = version;
   if (major !== 3) return false;
-  return minor >= 9 && minor < 13;
+  return minor >= 10 && minor < 13;
 }
 
 export async function listAvailablePythons(): Promise<PythonInfo[]> {
@@ -82,10 +100,12 @@ export async function listAvailablePythons(): Promise<PythonInfo[]> {
     const raw = `${probe.stdout}${probe.stderr}`.trim();
     const versionNums = parseMajorMinor(raw);
     if (!isVersionSupported(versionNums)) continue;
+    const tag = cmd.includes("/") ? `路径 ${cmd}` : "PATH 中的 python";
     results.push({
       command: cmd,
       version: `${versionNums[0]}.${versionNums[1]}`,
       raw,
+      source: tag,
     });
   }
   return results;
@@ -97,7 +117,7 @@ export async function selectPython(
   const candidates = await listAvailablePythons();
   if (candidates.length === 0) {
     throw new Error(
-      "未在系统找到可用的 Python (3.9 ~ 3.12)，请先安装 Python 后重启服务",
+      "未在系统找到可用的 Python (3.10 - 3.12)，请安装 Python 3.10/3.11/3.12 后重启服务",
     );
   }
   const [prefMajor, prefMinor] = preferredVersion.split(".").map(Number);
@@ -105,19 +125,17 @@ export async function selectPython(
     (c) => c.version === `${prefMajor}.${prefMinor}`,
   );
   if (exact) {
-    audioLog.info(`已选择 Python: ${exact.command} (${exact.version})`);
+    audioLog.info(
+      `已选择 Python: ${exact.command} (${exact.version}, 来自 ${exact.source})`,
+    );
     return exact;
   }
-  const sorted = [...candidates].sort((a, b) => {
-    const av = a.version.split(".").map(Number);
-    const bv = b.version.split(".").map(Number);
-    return compareVersion(bv, av);
-  });
-  const fallback = sorted[0];
-  audioLog.warn(
-    `未找到 Python ${preferredVersion}，回退到 ${fallback.command} (${fallback.version})`,
+  const list = candidates
+    .map((c) => `  - ${c.command} (${c.version}, ${c.source})`)
+    .join("\n");
+  throw new Error(
+    `系统未找到 Python ${preferredVersion}。可用的 Python:\n${list}\n请安装 Python ${preferredVersion} 或在 WebUI 的 audio 配置中切换到已安装的版本`,
   );
-  return fallback;
 }
 
 export async function ensurePip(pythonCmd: string): Promise<void> {

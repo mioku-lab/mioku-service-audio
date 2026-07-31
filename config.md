@@ -47,12 +47,10 @@ fields:
   - key: settings.pythonVersion
     label: Python 版本
     type: select
-    description: 创建虚拟环境时使用的 Python 版本，必须 3.9 - 3.12
+    description: 创建虚拟环境时使用的 Python 版本，必须 3.10 / 3.11 / 3.12（GPT-SoVITS 的 x_transformers 等依赖依赖 3.10+ PEP 604 语法）
     options:
-      - value: "3.9"
-        label: "3.9"
       - value: "3.10"
-        label: "3.10"
+        label: "3.10 (推荐)"
       - value: "3.11"
         label: "3.11"
       - value: "3.12"

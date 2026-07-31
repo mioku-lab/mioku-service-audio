@@ -40,11 +40,10 @@ export const MIN_RAM_GB = 8;
 export const BOOTSTRAP_READY_TIMEOUT_MS = 600_000;
 export const RUNTIME_STARTUP_TIMEOUT_MS = 120_000;
 
-export const VENV_PY_MIN = [3, 9] as const;
+export const VENV_PY_MIN = [3, 10] as const;
 export const VENV_PY_MAX_EXCLUSIVE = [3, 13] as const;
 
 export const SUPPORTED_PY_VERSIONS = [
-  "3.9",
   "3.10",
   "3.11",
   "3.12",

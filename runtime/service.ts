@@ -271,8 +271,8 @@ class AudioServiceImpl implements AudioServiceApi {
   private async doSwitchModel(model: GptSovitsModel): Promise<void> {
     if (!this.internal.runtime || !this.internal.repoDir) return;
     const selection = getModelSelection(model);
-    const sot = path.join(this.internal.repoDir, selection.vitsWeights);
-    const gpt = path.join(this.internal.repoDir, selection.t2sWeights);
+    const sot = path.join(this.internal.repoDir, selection.localVitsPath);
+    const gpt = path.join(this.internal.repoDir, selection.localT2sPath);
     audioLog.info(`切换模型到 ${model} (Sovits=${sot}, GPT=${gpt})`);
     await setSovitsWeights(this.internal.runtime.apiBase, sot);
     await setGptWeights(this.internal.runtime.apiBase, gpt);
