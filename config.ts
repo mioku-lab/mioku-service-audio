@@ -4,6 +4,7 @@ import {
   DEFAULT_HOST,
   DEFAULT_PIP_INDEX_URL,
   DEFAULT_PORT,
+  DEFAULT_REFERENCE_AUDIO_NAME,
   GPT_SOVITS_REPO_URL,
   HUGGINGFACE_REPO,
 } from "./constants";
@@ -23,7 +24,7 @@ export const SETTINGS_DEFAULTS: AudioServiceSettings = {
   inferenceTimeoutMs: 120_000,
   isHalf: true,
   autoBootstrap: true,
-  defaultRefAudio: "",
+  defaultRefAudio: DEFAULT_REFERENCE_AUDIO_NAME,
 };
 
 export const REFERENCE_AUDIO_MANIFEST_FILENAME = "reference-audio.json";

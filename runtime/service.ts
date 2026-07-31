@@ -29,6 +29,7 @@ import {
   bootstrapInBackground,
   type BootstrapState,
 } from "../bootstrap";
+import { ensureDefaultReferenceAudio } from "../bootstrap/default-ref-audio";
 import type { RuntimeHandle } from "../bootstrap/runtime";
 import { getModelSelection } from "../bootstrap/models";
 import { SERVICE_NAME } from "../constants";
@@ -99,6 +100,10 @@ class AudioServiceImpl implements AudioServiceApi {
   private async bootstrap(): Promise<void> {
     try {
       await this.internal.store.ensureReady();
+      await ensureDefaultReferenceAudio(
+        this.internal.serviceDataDir,
+        this.internal.store,
+      );
       this.notify("init", "正在初始化 audio 服务 ...", false);
       const result = await bootstrapInBackground({
         settings: this.internal.settings,

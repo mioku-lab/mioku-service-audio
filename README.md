@@ -27,7 +27,7 @@ data/mioku-service-audio/reference-audio/
 
 ## 依赖
 
-- Python 3.9 - 3.12
+- Python 3.10 - 3.12
 - git
 - 8GB+ RAM（无 CUDA 时）
 - （可选）NVIDIA GPU
@@ -97,4 +97,4 @@ const result = await audio.generateByText({
 
 ### `getStatus() / ready()`
 
-`ready()` 是异步等待首次 bootstrap 完成；`getStatus()` 同步读取当前状态（设备、模型、端口、是否就绪、最近错误等）。
+`ready()` 是异步等待首次 bootstrap 完成；`getStatus()` 同步读取当前状态（设备、模型、端口、是否就绪、最近错误等）。```

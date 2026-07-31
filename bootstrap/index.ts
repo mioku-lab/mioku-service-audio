@@ -1,6 +1,5 @@
 import * as path from "node:path";
 import { audioLog } from "../utils/log";
-import { writeJsonFile } from "../utils/fs";
 import { probeDevice, inferHalfPrecision, type DeviceProbe } from "./device";
 import { selectPython, ensurePip, type PythonInfo } from "./python";
 import { createVenv, type VenvInfo } from "./venv";
@@ -15,7 +14,6 @@ import { startRuntime, type RuntimeHandle } from "./runtime";
 import {
   REPO_DIRNAME,
   VENV_DIRNAME,
-  REFERENCE_AUDIO_DIRNAME,
   BOOTSTRAP_READY_TIMEOUT_MS,
   RUNTIME_STARTUP_TIMEOUT_MS,
 } from "../constants";
@@ -87,7 +85,6 @@ export async function bootstrapInBackground(
 
   const repoDir = path.join(serviceDataDir, REPO_DIRNAME);
   const venvDir = path.join(serviceDataDir, VENV_DIRNAME);
-  const referenceAudioDir = path.join(serviceDataDir, REFERENCE_AUDIO_DIRNAME);
 
 update("venv", "正在创建 Python 虚拟环境 ...");
   const venv = await createVenv(venvDir, python, settings.pipIndexUrl);
@@ -106,9 +103,6 @@ update("venv", "正在创建 Python 虚拟环境 ...");
 
   update("deps", "正在安装 Python 依赖 (可能耗时 5-15 分钟)...");
   await ensurePythonDeps(venv, repoDir);
-
-  update("config", "正在写入 GPT-SoVITS 启动配置 ...");
-  await writeReferenceAudioConfig(referenceAudioDir);
 
   update("runtime", "正在启动 GPT-SoVITS server ...");
   if (!isRepoReady(repoDir)) {
@@ -176,21 +170,7 @@ async function shouldInstallG2PW(model: GptSovitsModel): Promise<boolean> {
   return model === "v2";
 }
 
-async function writeReferenceAudioConfig(
-  referenceAudioDir: string,
-): Promise<void> {
-  const manifestPath = path.join(
-    referenceAudioDir,
-    "..",
-    "reference-audio.json",
-  );
-  await writeJsonFile(manifestPath, {
-    schemaVersion: 1,
-    entries: {},
-  });
-}
-
-function timeoutReject(ms: number, message: string): Promise<never> {
+async function timeoutReject(ms: number, message: string): Promise<never> {
   return new Promise<never>((_, reject) => {
     setTimeout(() => reject(new Error(message)), ms);
   });
