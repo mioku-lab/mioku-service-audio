@@ -45,6 +45,32 @@ export async function ensureHuggingfaceHub(venv: VenvInfo): Promise<void> {
   audioLog.info("huggingface_hub 安装完成");
 }
 
+export async function ensureTorchCodec(venv: VenvInfo): Promise<void> {
+  const probe = await runCommand(
+    venv.pythonBin,
+    ["-c", "import torchcodec"],
+    { cwd: venv.dir },
+  );
+  if (probe.code === 0) {
+    audioLog.debug("torchcodec 已安装，跳过");
+    return;
+  }
+  audioLog.info(
+    "正在安装 torchcodec (torchaudio 2.9+ 内部依赖，否则 TTS 报 TorchCodec is required) ...",
+  );
+  const install = await runCommand(
+    venv.pythonBin,
+    ["-m", "pip", "install", "torchcodec"],
+    { cwd: venv.dir },
+  );
+  if (install.code !== 0) {
+    throw new Error(
+      `torchcodec 安装失败: ${install.stderr.trim() || install.stdout.trim()}`,
+    );
+  }
+  audioLog.info("torchcodec 安装完成");
+}
+
 async function pipInstall(venv: VenvInfo, args: string[]): Promise<void> {
   const res = await runCommand(
     venv.pythonBin,

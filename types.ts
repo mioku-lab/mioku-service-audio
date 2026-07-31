@@ -101,6 +101,7 @@ export interface AudioServiceApi {
   setActiveModel(model: GptSovitsModel): Promise<void>;
   getActiveModel(): GptSovitsModel;
   listSupportedModels(): GptSovitsModel[];
+  dispose(): Promise<void>;
 }
 
 export interface BootstrapProgress {

@@ -87,7 +87,16 @@ const audioService: MiokuService = {
   },
 
   async dispose() {
+    if (cachedService) {
+      try {
+        await cachedService.dispose();
+      } catch (err) {
+        logger.warn(`audio-service dispose 失败: ${(err as Error).message}`);
+      }
+    }
     cachedService = null;
+    cachedImpl = null;
+    cachedDir = null;
     logger.info("audio-service 已卸载");
   },
 };

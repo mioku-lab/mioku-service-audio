@@ -9,7 +9,9 @@ import {
   ensureBasePretrained,
   ensureG2PWModel,
 } from "./models";
-import { ensurePythonDeps } from "./deps";
+import { ensurePythonDeps, ensureTorchCodec } from "./deps";
+import { ensureFastLangdetectCache } from "./fast-langdetect-cache";
+import { ensureSourcePatch } from "./source-patch";
 import { startRuntime, type RuntimeHandle } from "./runtime";
 import {
   REPO_DIRNAME,
@@ -92,6 +94,8 @@ update("venv", "正在创建 Python 虚拟环境 ...");
   update("repo", "正在拉取 GPT-SoVITS 仓库 ...");
   await ensureGitAvailable();
   await ensureRepoCloned({ repoDir, remote: settings.gitRemote });
+  await ensureSourcePatch(repoDir, serviceDataDir);
+  await ensureFastLangdetectCache(repoDir);
 
   update("models", "正在准备预训练模型 ...");
   await ensureBasePretrained(repoDir, settings.hfMirror);
@@ -103,6 +107,9 @@ update("venv", "正在创建 Python 虚拟环境 ...");
 
   update("deps", "正在安装 Python 依赖 (可能耗时 5-15 分钟)...");
   await ensurePythonDeps(venv, repoDir);
+
+  update("deps", "正在确保 torchcodec 已安装 (torchaudio 2.9+ 必需)...");
+  await ensureTorchCodec(venv);
 
   update("runtime", "正在启动 GPT-SoVITS server ...");
   if (!isRepoReady(repoDir)) {

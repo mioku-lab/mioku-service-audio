@@ -30,7 +30,7 @@ import {
   type BootstrapState,
 } from "../bootstrap";
 import { ensureDefaultReferenceAudio } from "../bootstrap/default-ref-audio";
-import type { RuntimeHandle } from "../bootstrap/runtime";
+import { stopRuntime, type RuntimeHandle } from "../bootstrap/runtime";
 import { getModelSelection } from "../bootstrap/models";
 import { SERVICE_NAME } from "../constants";
 
@@ -287,6 +287,24 @@ class AudioServiceImpl implements AudioServiceApi {
 
   listSupportedModels(): GptSovitsModel[] {
     return ["v2", "v2Pro", "v2ProPlus", "v4"];
+  }
+
+  async dispose(): Promise<void> {
+    const handle = this.internal.runtime;
+    if (handle) {
+      this.internal.runtime = null;
+      try {
+        await stopRuntime(handle);
+      } catch (err) {
+        audioLog.warn(`停止 GPT-SoVITS 子进程失败: ${(err as Error).message}`);
+      }
+    }
+    this.internal.status = {
+      ...this.internal.status,
+      ready: false,
+      bootstrapping: false,
+    };
+    this.internal.listeners.clear();
   }
 }
 

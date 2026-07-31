@@ -31,9 +31,17 @@ export const BUNDLED_REFERENCE_AUDIOS: readonly BundledReferenceAudio[] = [
     promptText:
       "语音合成是通过机械的、电子的方法产生人造语音的技术。TTS技术（又称文语转换技术）隶属于语音合成，它是将计算机自己产生的、或外部输入的文字信息转变为可以听得懂的、流利的汉语口语输出的技术。",
   },
+  {
+    name: "khn-jp",
+    filename: "khn-jp.wav",
+    lang: "ja",
+    promptText:
+      "週末？　えっと、土曜は別の学校の人と約束があるけど、日曜は何もないよ",
+  },
 ] as const;
 
-export const GPT_SOVITS_REPO_URL = "https://gh-proxy.com/https://github.com/RVC-Boss/GPT-SoVITS.git";
+export const GPT_SOVITS_REPO_URL =
+  "https://gh-proxy.com/https://github.com/RVC-Boss/GPT-SoVITS.git";
 export const HUGGINGFACE_REPO = "lj1995/GPT-SoVITS";
 export const G2PW_REPO = "XXXXRT/GPT-SoVITS-Pretrained";
 
@@ -69,8 +77,4 @@ export const RUNTIME_STARTUP_TIMEOUT_MS = 120_000;
 export const VENV_PY_MIN = [3, 10] as const;
 export const VENV_PY_MAX_EXCLUSIVE = [3, 13] as const;
 
-export const SUPPORTED_PY_VERSIONS = [
-  "3.10",
-  "3.11",
-  "3.12",
-] as const;
+export const SUPPORTED_PY_VERSIONS = ["3.10", "3.11", "3.12"] as const;
