@@ -17,6 +17,7 @@ export interface ModelSelection {
   remoteModelDir: string;
   version: GptSovitsModel;
   needsG2PW: boolean;
+  needsSvModel: boolean;
 }
 
 function buildModelSelection(opts: {
@@ -24,6 +25,7 @@ function buildModelSelection(opts: {
   remoteT2sFile: string;
   remoteVitsFile: string;
   needsG2PW: boolean;
+  needsSvModel?: boolean;
   version: GptSovitsModel;
 }): ModelSelection {
   const pretrainedModelsRoot = "GPT_SoVITS/pretrained_models";
@@ -38,6 +40,7 @@ function buildModelSelection(opts: {
     remoteModelDir: opts.remoteModelDir,
     version: opts.version,
     needsG2PW: opts.needsG2PW,
+    needsSvModel: opts.needsSvModel ?? false,
   };
 }
 
@@ -54,6 +57,7 @@ const MODEL_PRESETS: Record<GptSovitsModel, ModelSelection> = {
     remoteT2sFile: "s1v3.ckpt",
     remoteVitsFile: "v2Pro/s2Gv2Pro.pth",
     needsG2PW: false,
+    needsSvModel: true,
     version: "v2Pro",
   }),
   v2ProPlus: buildModelSelection({
@@ -61,6 +65,7 @@ const MODEL_PRESETS: Record<GptSovitsModel, ModelSelection> = {
     remoteT2sFile: "s1v3.ckpt",
     remoteVitsFile: "v2Pro/s2Gv2ProPlus.pth",
     needsG2PW: false,
+    needsSvModel: true,
     version: "v2ProPlus",
   }),
   v4: buildModelSelection({
@@ -223,6 +228,17 @@ export async function ensureModelWeights(
     `${localRoot}/${selection.remoteVitsFile}`,
     `${model} vits: ${path.basename(selection.remoteVitsFile)}`,
   );
+
+  if (selection.needsSvModel) {
+    const svLocal = `${localRoot}/sv/pretrained_eres2netv2w24s4ep4.ckpt`;
+    await downloadSingleFile(
+      hfMirror,
+      HUGGINGFACE_REPO,
+      "sv/pretrained_eres2netv2w24s4ep4.ckpt",
+      svLocal,
+      "sv/pretrained_eres2netv2w24s4ep4.ckpt",
+    );
+  }
 }
 
 export async function ensureG2PWModel(

@@ -1,5 +1,6 @@
 import * as path from "node:path";
 import { audioLog } from "../utils/log";
+import { freePort } from "../utils/port";
 import { probeDevice, inferHalfPrecision, type DeviceProbe } from "./device";
 import { selectPython, ensurePip, type PythonInfo } from "./python";
 import { createVenv, type VenvInfo } from "./venv";
@@ -9,7 +10,7 @@ import {
   ensureBasePretrained,
   ensureG2PWModel,
 } from "./models";
-import { ensurePythonDeps, ensureTorchCodec } from "./deps";
+import { ensurePythonDeps, ensureTorchCodec, ensureNltkData } from "./deps";
 import { ensureFastLangdetectCache } from "./fast-langdetect-cache";
 import { ensureSourcePatch } from "./source-patch";
 import { startRuntime, type RuntimeHandle } from "./runtime";
@@ -110,6 +111,12 @@ update("venv", "正在创建 Python 虚拟环境 ...");
 
   update("deps", "正在确保 torchcodec 已安装 (torchaudio 2.9+ 必需)...");
   await ensureTorchCodec(venv);
+
+  update("deps", "正在确保 NLTK 分词资源已就绪 ...");
+  await ensureNltkData(venv);
+
+  update("runtime", "正在检查端口占用 ...");
+  await freePort(settings.port);
 
   update("runtime", "正在启动 GPT-SoVITS server ...");
   if (!isRepoReady(repoDir)) {

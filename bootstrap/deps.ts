@@ -71,6 +71,41 @@ export async function ensureTorchCodec(venv: VenvInfo): Promise<void> {
   audioLog.info("torchcodec 安装完成");
 }
 
+export async function ensureNltkData(venv: VenvInfo): Promise<void> {
+  const probe = await runCommand(
+    venv.pythonBin,
+    [
+      "-c",
+      "import nltk; nltk.data.find('taggers/averaged_perceptron_tagger_eng')",
+    ],
+    { cwd: venv.dir },
+  );
+  if (probe.code === 0) {
+    audioLog.debug("NLTK averaged_perceptron_tagger_eng 已存在，跳过");
+    return;
+  }
+  audioLog.info(
+    "正在下载 NLTK averaged_perceptron_tagger_eng (g2p_en 英文分词需要)...",
+  );
+  const install = await runCommand(
+    venv.pythonBin,
+    [
+      "-m",
+      "nltk.downloader",
+      "averaged_perceptron_tagger_eng",
+      "-d",
+      `${venv.dir}/nltk_data`,
+    ],
+    { cwd: venv.dir },
+  );
+  if (install.code !== 0) {
+    throw new Error(
+      `NLTK 资源下载失败: ${install.stderr.trim() || install.stdout.trim()}`,
+    );
+  }
+  audioLog.info("NLTK averaged_perceptron_tagger_eng 下载完成");
+}
+
 async function pipInstall(venv: VenvInfo, args: string[]): Promise<void> {
   const res = await runCommand(
     venv.pythonBin,
