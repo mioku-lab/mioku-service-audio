@@ -144,12 +144,11 @@ export async function startRuntime(opts: StartOptions): Promise<RuntimeHandle> {
     env,
     onStdoutLine: (line) => {
       audioLog.debug(`[gpt-sovits] ${line}`);
-      if (line.includes(readyKeyword) && Date.now() - startedAt >= 500) {
-        resolveReady();
-      }
+      if (shouldResolveReady(line)) resolveReady();
     },
     onStderrLine: (line) => {
       routeStderr(line);
+      if (shouldResolveReady(line)) resolveReady();
     },
     onExit: (code) => {
       if (code !== 0) {
@@ -158,6 +157,12 @@ export async function startRuntime(opts: StartOptions): Promise<RuntimeHandle> {
       }
     },
   });
+
+  function shouldResolveReady(line: string): boolean {
+    return (
+      line.includes(readyKeyword) && Date.now() - startedAt >= 500
+    );
+  }
 
   function routeStderr(line: string): void {
     const stripped = line.replace(/^\s*|\s*$/g, "");
