@@ -1,4 +1,4 @@
-import { logger } from "mioki";
+import { logger } from "mioku";
 import {
   getServiceDataDir,
   ensureDataDir,

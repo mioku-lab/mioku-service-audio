@@ -1,4 +1,4 @@
-import { logger } from "mioki";
+import { logger } from "mioku";
 
 export const audioLog = {
   info(message: string): void {
