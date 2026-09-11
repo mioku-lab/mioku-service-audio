@@ -1,6 +1,6 @@
 {
   "name": "mioku-service-audio",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "基于 GPT-SoVITS 的语音合成服务",
   "main": "index.ts",
   "type": "module",

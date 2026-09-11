@@ -45,22 +45,30 @@ export async function ensureHuggingfaceHub(venv: VenvInfo): Promise<void> {
   audioLog.info("huggingface_hub 安装完成");
 }
 
+// torchcodec < 0.16 cannot load FFmpeg 9 (libavutil.61), so systems with a
+// modern Homebrew FFmpeg would fail at TTS time with "Could not load
+// libtorchcodec ... libavutil.60.dylib ... no such file". Pin the minimum
+// version that supports FFmpeg 9 and transparently upgrade stale installs.
+const TORCHCODEC_MIN_VERSION = "0.16.0";
+
 export async function ensureTorchCodec(venv: VenvInfo): Promise<void> {
-  const probe = await runCommand(
-    venv.pythonBin,
-    ["-c", "import torchcodec"],
-    { cwd: venv.dir },
-  );
-  if (probe.code === 0) {
-    audioLog.debug("torchcodec 已安装，跳过");
+  const version = await probeTorchCodecVersion(venv);
+  if (version && meetsMinVersion(version, TORCHCODEC_MIN_VERSION)) {
+    audioLog.debug(`torchcodec ${version} 已安装，跳过`);
     return;
   }
-  audioLog.info(
-    "正在安装 torchcodec (torchaudio 2.9+ 内部依赖，否则 TTS 报 TorchCodec is required) ...",
-  );
+  if (version) {
+    audioLog.warn(
+      `检测到 torchcodec ${version} (< ${TORCHCODEC_MIN_VERSION})，正在升级以支持 FFmpeg 9 ...`,
+    );
+  } else {
+    audioLog.info(
+      `正在安装 torchcodec>=${TORCHCODEC_MIN_VERSION} (torchaudio 2.9+ 内部依赖，否则 TTS 报 TorchCodec is required) ...`,
+    );
+  }
   const install = await runCommand(
     venv.pythonBin,
-    ["-m", "pip", "install", "torchcodec"],
+    ["-m", "pip", "install", `torchcodec>=${TORCHCODEC_MIN_VERSION}`],
     { cwd: venv.dir },
   );
   if (install.code !== 0) {
@@ -69,6 +77,34 @@ export async function ensureTorchCodec(venv: VenvInfo): Promise<void> {
     );
   }
   audioLog.info("torchcodec 安装完成");
+}
+
+async function probeTorchCodecVersion(venv: VenvInfo): Promise<string | null> {
+  const probe = await runCommand(
+    venv.pythonBin,
+    ["-c", "import torchcodec; print(torchcodec.__version__)"],
+    { cwd: venv.dir },
+  );
+  if (probe.code !== 0) return null;
+  return probe.stdout.trim() || null;
+}
+
+function meetsMinVersion(installed: string, minimum: string): boolean {
+  const parse = (v: string): number[] =>
+    v
+      .split(/[.+-]/)
+      .filter((seg) => /^\d+$/.test(seg))
+      .map((seg) => Number.parseInt(seg, 10));
+  const a = parse(installed);
+  const b = parse(minimum);
+  const len = Math.max(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    const ai = a[i] ?? 0;
+    const bi = b[i] ?? 0;
+    if (ai > bi) return true;
+    if (ai < bi) return false;
+  }
+  return true;
 }
 
 export async function ensureNltkData(venv: VenvInfo): Promise<void> {
