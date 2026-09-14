@@ -18,7 +18,6 @@ interface BootOptions {
 
 export const AudioService = {
   name: SERVICE_NAME,
-  version: "1.0.0",
 };
 
 export type {
@@ -78,8 +77,6 @@ async function bootstrapAudioService(): Promise<AudioServiceApi> {
 
 const audioService: MiokuService = {
   name: SERVICE_NAME,
-  version: "1.0.0",
-  description: "基于 GPT-SoVITS 的语音合成服务",
   api: {} as AudioServiceApi,
 
   async init() {
